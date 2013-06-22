@@ -21,23 +21,23 @@ protected:
 	virtual void onUpdate(double dt);
 	virtual void onDraw(double scrx, double scry, void* udata = NULL);
 
-	virtual void onMouseDown(int x, int y, unsigned int b);
-	virtual void onMouseUp(int x, int y, unsigned int b);
-	virtual void onMouseWheel(int x, int y, int d);
-	virtual void onMouseMove(int x, int y, int dx, int dy);
+	virtual void onMouseDown(double x, double y, unsigned int b);
+	virtual void onMouseUp(double x, double y, unsigned int b);
+	virtual void onMouseWheel(double x, double y, int d);
+	virtual void onMouseMove(double x, double y, double dx, double dy);
 	virtual void onKeyDown(int key);
 	virtual void onKeyUp(int key);
 	virtual void onKeyText(unsigned int ch);
 
 	virtual void onMove(double dx, double dy);
 	virtual void onResize();
-	virtual void onPress(int x, int y, unsigned int b);
-	virtual void onRelease(int x, int y, unsigned int b);
-	virtual void onClick(int x, int y, unsigned int b);
+	virtual void onPress(double x, double y, unsigned int b);
+	virtual void onRelease(double x, double y, unsigned int b);
+	virtual void onClick(double x, double y, unsigned int b);
 	virtual void onFocusGained();
 	virtual void onFocusLost();
-	virtual void onMouseEnter(int x, int y);
-	virtual void onMouseLeave(int x, int y);
+	virtual void onMouseEnter(double x, double y);
+	virtual void onMouseLeave(double x, double y);
 	virtual void onAdopt(Widget& child);
 	virtual void onDisown(Widget& child);
 	virtual void onAdopted(Widget& parent);

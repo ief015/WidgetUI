@@ -27,25 +27,25 @@ void WidgetTemplate::onDraw(double scrx, double scry, void* udata)
 
 
 
-void WidgetTemplate::onMouseDown(int x, int y, unsigned int b)
+void WidgetTemplate::onMouseDown(double x, double y, unsigned int b)
 {
 	Widget::onMouseDown(x, y, b);
 }
 
 
-void WidgetTemplate::onMouseUp(int x, int y, unsigned int b)
+void WidgetTemplate::onMouseUp(double x, double y, unsigned int b)
 {
 	Widget::onMouseUp(x, y, b);
 }
 
 
-void WidgetTemplate::onMouseWheel(int x, int y, int d)
+void WidgetTemplate::onMouseWheel(double x, double y, int d)
 {
 	Widget::onMouseWheel(x, y, d);
 }
 
 
-void WidgetTemplate::onMouseMove(int x, int y, int dx, int dy)
+void WidgetTemplate::onMouseMove(double x, double y, double dx, double dy)
 {
 	Widget::onMouseMove(x, y, dx, dy);
 }
@@ -82,19 +82,19 @@ void WidgetTemplate::onResize()
 }
 
 
-void WidgetTemplate::onPress(int x, int y, unsigned int b)
+void WidgetTemplate::onPress(double x, double y, unsigned int b)
 {
 	
 }
 
 
-void WidgetTemplate::onRelease(int x, int y, unsigned int b)
+void WidgetTemplate::onRelease(double x, double y, unsigned int b)
 {
 
 }
 
 
-void WidgetTemplate::onClick(int x, int y, unsigned int b)
+void WidgetTemplate::onClick(double x, double y, unsigned int b)
 {
 	
 }
@@ -112,13 +112,13 @@ void WidgetTemplate::onFocusLost()
 }
 
 
-void WidgetTemplate::onMouseEnter(int x, int y)
+void WidgetTemplate::onMouseEnter(double x, double y)
 {
 
 }
 
 
-void WidgetTemplate::onMouseLeave(int x, int y)
+void WidgetTemplate::onMouseLeave(double x, double y)
 {
 
 }

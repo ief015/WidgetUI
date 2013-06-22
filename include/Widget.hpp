@@ -2,12 +2,12 @@
  *  Widget.hpp                                                                       *
  *  Simple hierarchy-style UI widget system.                                         *
  *                                                                                   *
- *  Authors: Nathan Cousins                                                          *
+ *  Author(s): Nathan Cousins                                                        *
  *  Last Update: Jun 19, 2013                                                        *
  *                                                                                   *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *                                                                                   *
- *	Copyright © 2013 Nathan Cousins                                                  *
+ *      Copyright © 2013 Nathan Cousins                                              *
  *                                                                                   *
  *  Permission is hereby granted, free of charge, to any person obtaining a copy     *
  *  of this software and associated documentation files (the “Software”), to deal    *
@@ -39,15 +39,23 @@
 class Widget
 {
 private:
-	std::vector<Widget*> m_widgets; /* Back-most widget is focused and/or top. */
-	Widget* m_parent;
 	
-	bool m_down;
-	unsigned int m_downBtn;
-	bool m_testInsideChild;
-	Widget* m_hover;
-	int m_mouseX, m_mouseY;
-	bool m_hidden;
+	// Widget UI internal variables.
+	struct
+	{
+		std::vector<Widget*> widgets; /* Back-most widget is focused and/or top. */
+		Widget* parent;
+
+		bool down;
+		unsigned int downBtn;
+		bool mouseInsideChild;
+		Widget* hover;
+		
+		bool hidden;
+
+		double mouseX, mouseY;
+
+	} m_internals;
 	
 protected:
 	
@@ -60,15 +68,20 @@ public:
 	/* *** Contruction/Deconstruction *** */
 	
 	Widget()
-	: m_parent(NULL)
-	, m_hover(NULL)
-	, m_down(false)
-	, m_downBtn(0)
-	, m_hidden(false)
 	{
 		x = 0.; y = 0.;
 		width = 0.; height = 0.;
-		m_mouseX = 0; m_mouseY = 0;
+		
+		m_internals.parent = NULL;
+		m_internals.hover = NULL;
+		
+		m_internals.down = false;
+		m_internals.downBtn = 0;
+		m_internals.mouseInsideChild = false;
+		
+		m_internals.hidden = false;
+		m_internals.mouseX = 0.;
+		m_internals.mouseY = 0.;
 	}
 	
 	
@@ -84,7 +97,7 @@ public:
 	{
 		x += movex;
 		y += movey;
-	
+		
 		this->onMove(movex, movey);
 	}
 	
@@ -93,7 +106,7 @@ public:
 		double oldx = x, oldy = y;
 		x = posx;
 		y = posy;
-	
+		
 		this->onMove(x - oldx, y - oldy);
 	}
 	
@@ -149,11 +162,11 @@ public:
 		// Check if we're hidden, or if our higher-level parents are hidden.
 		do
 		{
-			if (cur->m_hidden)
+			if (cur->m_internals.hidden)
 				return true;
 			
 			// Process the next parent.
-			cur = cur->m_parent;
+			cur = cur->m_internals.parent;
 		}
 		while (cur);
 		
@@ -163,7 +176,7 @@ public:
 	// Hide this widget and children.
 	void hide(bool hidden = true)
 	{
-		m_hidden = hidden;
+		m_internals.hidden = hidden;
 	}
 	
 	
@@ -173,8 +186,8 @@ public:
 	void addWidget(Widget* widget)
 	{
 		// Push the new child to the back. (It will become the focused widget)
-		m_widgets.push_back(widget);
-		widget->m_parent = this;
+		m_internals.widgets.push_back(widget);
+		widget->m_internals.parent = this;
 		
 		// Call widget Adopt events.
 		this->onAdopt(*widget);
@@ -187,14 +200,14 @@ public:
 		Widget* child;
 		
 		// Find widget.
-		for (size_t i = m_widgets.size(); i--;)
+		for (size_t i = m_internals.widgets.size(); i--;)
 		{
-			child = m_widgets[i];
+			child = m_internals.widgets[i];
 			if (child == widget)
 			{
 				// Remove it from children.
-				child->m_parent = NULL;
-				m_widgets.erase(m_widgets.begin() + i);
+				child->m_internals.parent = NULL;
+				m_internals.widgets.erase(m_internals.widgets.begin() + i);
 				
 				// Call widget Disown events.
 				this->onDisown(*child);
@@ -211,9 +224,9 @@ public:
 	bool hasWidget(const Widget& widget) const
 	{
 		// Find widget.
-		for (size_t i = m_widgets.size(); i--;)
+		for (size_t i = m_internals.widgets.size(); i--;)
 		{
-			if (m_widgets[i] == &widget)
+			if (m_internals.widgets[i] == &widget)
 				return true;
 		}
 		
@@ -226,19 +239,19 @@ public:
 	// Does this widget have a parent?
 	bool hasParent() const
 	{
-		return m_parent != NULL;
+		return m_internals.parent != NULL;
 	}
 	
 	// Returns the parent widget. Returns NULL if no parent.
 	Widget* getParent()
 	{
-		return m_parent;
+		return m_internals.parent;
 	}
 	
 	// Returns the parent widget. Returns NULL if no parent.
 	const Widget* getParent() const
 	{
-		return m_parent;
+		return m_internals.parent;
 	}
 	
 	
@@ -247,25 +260,25 @@ public:
 	// Does this widget contain children widgets?
 	bool hasChildren() const
 	{
-		return m_widgets.size() > 0;
+		return m_internals.widgets.size() > 0;
 	}
 	
 	// Get a child as specific index. Index must valid (in bounds).
 	Widget* getChild(size_t idx)
 	{
-		return m_widgets[idx];
+		return m_internals.widgets[idx];
 	}
 	
 	// Get a child as specific index. Index must valid (in bounds).
 	const Widget* getChild(size_t idx) const
 	{
-		return m_widgets[idx];
+		return m_internals.widgets[idx];
 	}
 	
 	// Get the number of children this widget parents.
 	size_t getNumOfChildren() const
 	{
-		return m_widgets.size();
+		return m_internals.widgets.size();
 	}
 	
 	
@@ -276,21 +289,21 @@ public:
 	{
 		Widget* widget;
 		
-		if (idx >= m_widgets.size())
+		if (idx >= m_internals.widgets.size())
 			return;
 		
-		widget = m_widgets[idx];
+		widget = m_internals.widgets[idx];
 		
 		// Don't do anything if widget is already focused.
 		if (widget->isFocusedChild())
 			return;
 		
 		// Make it the focused object.
-		m_widgets.push_back(widget);
-		m_widgets.erase(m_widgets.begin()+idx);
+		m_internals.widgets.push_back(widget);
+		m_internals.widgets.erase(m_internals.widgets.begin()+idx);
 		
 		// Call lost/gained focus events.
-		m_widgets[m_widgets.size()-2]->onFocusLost();
+		m_internals.widgets[m_internals.widgets.size()-2]->onFocusLost();
 		widget->onFocusGained();
 	}
 	
@@ -300,9 +313,9 @@ public:
 		Widget* widget;
 		
 		// Find child.
-		for (size_t i = m_widgets.size(); i--;)
+		for (size_t i = m_internals.widgets.size(); i--;)
 		{
-			widget = m_widgets[i];
+			widget = m_internals.widgets[i];
 			
 			if (widget == child)
 			{
@@ -311,11 +324,11 @@ public:
 					return;
 				
 				// Make it the focused object.
-				m_widgets.push_back(widget);
-				m_widgets.erase(m_widgets.begin()+i);
+				m_internals.widgets.push_back(widget);
+				m_internals.widgets.erase(m_internals.widgets.begin()+i);
 				
 				// Call lost/gained focus events.
-				m_widgets[m_widgets.size()-2]->onFocusLost();
+				m_internals.widgets[m_internals.widgets.size()-2]->onFocusLost();
 				widget->onFocusGained();
 			}
 		}
@@ -325,22 +338,22 @@ public:
 	Widget* getFocused()
 	{
 		// Return NULL if empty.
-		if (m_widgets.empty())
+		if (m_internals.widgets.empty())
 			return NULL;
 		
 		// The back widget is the focused component.
-		return m_widgets.back();
+		return m_internals.widgets.back();
 	}
 	
 	// Get the focused child. Returns NULL if no children are present.
 	const Widget* getFocused() const
 	{
 		// Return NULL if empty.
-		if (m_widgets.empty())
+		if (m_internals.widgets.empty())
 			return NULL;
 		
 		// The back widget is the focused component.
-		return m_widgets.back();
+		return m_internals.widgets.back();
 	}
 	
 	// Is this widget the focused widget of the parent? Always returns true if no parent is present.
@@ -353,7 +366,7 @@ public:
 			if (cur->isFocusedChild())
 			{
 				// Process the parent if this is the focused child.
-				cur = cur->m_parent;
+				cur = cur->m_internals.parent;
 			}
 			else
 			{
@@ -371,8 +384,8 @@ public:
 	bool isFocusedChild() const
 	{
 		// Check if we're the parent's focused child.
-		if (m_parent)
-			return m_parent->getFocused() == this;
+		if (m_internals.parent)
+			return m_internals.parent->getFocused() == this;
 		
 		// Always return true if no parent.
 		return true;
@@ -386,15 +399,15 @@ public:
 			return;
 		
 		// Can't pop if there is no parent.
-		if (!m_parent)
+		if (!m_internals.parent)
 			return;
 		
 		// Can't pop if this is the only child.
-		if (m_parent->m_widgets.size() < 2)
+		if (m_internals.parent->m_internals.widgets.size() < 2)
 			return;
 		
 		// Set the second child into focus.
-		m_parent->setFocus(m_parent->m_widgets.size()-2);
+		m_internals.parent->setFocus(m_internals.parent->m_internals.widgets.size()-2);
 	}
 	
 	
@@ -403,9 +416,9 @@ public:
 	// Is the mouse holding this widget? Optionally, it will return which mouse button is holding the widget down via `btn'.
 	bool isHeldDown(unsigned int* btn = NULL) const
 	{
-		if (m_down)
+		if (m_internals.down)
 		{
-			*btn = m_downBtn;
+			*btn = m_internals.downBtn;
 			return true;
 		}
 		return false;
@@ -415,30 +428,30 @@ public:
 	bool isMouseHovering() const
 	{
 		// Check if the hovering component is this widget.
-		if (m_parent)
-			return m_parent->m_hover == this;
+		if (m_internals.parent)
+			return m_internals.parent->m_internals.hover == this;
 		
-		// Always return false if no m_parent.
+		// Always return false if no m_internals.parent.
 		return false;
 	}
 	
 	// Get the relative mouse position.
-	int getRelativeMouseX() const
+	double getRelativeMouseX() const
 	{
-		return m_mouseX;
+		return m_internals.mouseX;
 	}
 	
 	// Get the relative mouse position.
-	int getRelativeMouseY() const
+	double getRelativeMouseY() const
 	{
-		return m_mouseY;
+		return m_internals.mouseY;
 	}
 	
 	// Get relative mouse position.
-	void getRelatieMousePos(int& x, int& y) const
+	void getRelatieMousePos(double& x, double& y) const
 	{
-		x = m_mouseX;
-		y = m_mouseY;
+		x = m_internals.mouseX;
+		y = m_internals.mouseY;
 	}
 	
 	
@@ -457,72 +470,76 @@ public:
 	}
 	
 	// Call this to invoke Mouse-Down related events.
-	// Mouse positions [x, y] must be relative to the position of the widget.
-	void mouseDown(int x, int y, unsigned int b)
+	// Mouse positions [x, y] here must be relative to the position of the parent widget (if any.)
+	// ie. Use global/screen/window mouse positions if this is the root widget.
+	void mouseDown(double x, double y, unsigned int b)
 	{
-		if (m_hidden)
+		if (m_internals.hidden)
 			return;
 		
 		this->onMouseDown(x, y, b);
 		
-		if (m_testInsideChild)
+		if (m_internals.mouseInsideChild)
 			return;
 		
-		if (static_cast<double>(x) >= this->x && static_cast<double>(x) < this->x + this->width &&
-			static_cast<double>(y) >= this->y && static_cast<double>(y) < this->y + this->height )
+		if (x >= this->x && x < this->x + this->width &&
+			y >= this->y && y < this->y + this->height )
 		{
-			// Widget is being held down.
-			if (!m_down)
+			// This widget is being held down.
+			if (!m_internals.down)
 			{
-				m_down = true;
-				m_downBtn = b;
+				m_internals.down = true;
+				m_internals.downBtn = b;
 			}
 			
 			// Mouse pressed.
-			this->onPress(static_cast<int>(x - this->x),  static_cast<int>(y - this->y), b);
+			this->onPress(x - this->x,  y - this->y, b);
 		}
 	}
 	
 	// Call this to invoke Mouse-Up related events.
-	// Mouse positions [x, y] must be relative to the position of the widget.
-	void mouseUp(int x, int y, unsigned int b)
+	// Mouse positions [x, y] here must be relative to the position of the parent widget (if any.)
+	// ie. Use global/screen/window mouse positions if this is the root widget.
+	void mouseUp(double x, double y, unsigned int b)
 	{
-		if (m_hidden)
+		if (m_internals.hidden)
 			return;
 		
 		this->onMouseUp(x, y, b);
 		
-		if (m_down && m_downBtn == b)
+		if (m_internals.down && m_internals.downBtn == b)
 		{
 			// No longer held down.
-			m_down = false;
+			m_internals.down = false;
 			
 			// Mouse released this widget.
-			this->onRelease(static_cast<int>(x - this->x), static_cast<int>(y - this->y), b);
+			this->onRelease(x - this->x, y - this->y, b);
 			
-			if (m_testInsideChild)
+			if (m_internals.mouseInsideChild)
 				return;
 			
 			// Check if mouse was inside.
-			if (static_cast<double>(x) >= this->x && static_cast<double>(x) < this->x + this->width &&
-				static_cast<double>(y) >= this->y && static_cast<double>(y) < this->y + this->height )
+			if (x >= this->x && x < this->x + this->width &&
+				y >= this->y && y < this->y + this->height )
 			{
 				// Widget was clicked.
-				this->onClick(static_cast<int>(x - this->x), static_cast<int>(y - this->y), b);
+				this->onClick(x - this->x, y - this->y, b);
 			}
 		}
 	}
 	
 	// Call this to invoke Mouse-Wheel related events.
-	// Mouse positions [x, y] must be relative to the position of the widget.
-	void mouseWheel(int x, int y, int d)
+	// Mouse positions [x, y] here must be relative to the position of the parent widget (if any.)
+	// ie. Use global/screen/window mouse positions if this is the root widget.
+	void mouseWheel(double x, double y, int d)
 	{
 		this->onMouseWheel(x, y, d);
 	}
 	
 	// Call this to invoke Mouse-Move related events.
-	// Mouse positions [x, y] must be relative to the position of the widget.
-	void mouseMove(int x, int y, int dx, int dy)
+	// Mouse positions [x, y] here must be relative to the position of the parent widget (if any.)
+	// ie. Use global/screen/window mouse positions if this is the root widget.
+	void mouseMove(double x, double y, double dx, double dy)
 	{
 		this->onMouseMove(x, y, dx, dy);
 	}
@@ -559,161 +576,175 @@ protected:
 		
 		// Check for mouse entering/leaving.
 		bool hovering = false;
-		for (size_t i = m_widgets.size(); i--;)
+		for (size_t i = m_internals.widgets.size(); i--;)
 		{
-			widget = m_widgets[i];
+			widget = m_internals.widgets[i];
 			
-			if (static_cast<double>(m_mouseX) >= widget->x && static_cast<double>(m_mouseX) < widget->x + widget->width &&
-				static_cast<double>(m_mouseY) >= widget->y && static_cast<double>(m_mouseY) < widget->y + widget->height )
+			if (m_internals.mouseX >= widget->x && m_internals.mouseX < widget->x + widget->width &&
+				m_internals.mouseY >= widget->y && m_internals.mouseY < widget->y + widget->height )
 			{
 				hovering = true;
 				
 				// If mouse is already hovering, no need to do anything.
-				if (m_hover == widget)
+				if (m_internals.hover == widget)
 					break;
 				
 				// Change mouse hover to new widget.
-				Widget* oldHover = m_hover;
-				m_hover = widget;
+				Widget* oldHover = m_internals.hover;
+				m_internals.hover = widget;
 				
 				// Call widget events.
 				if (oldHover)
-					oldHover->onMouseLeave(m_mouseX, m_mouseY);
+					oldHover->onMouseLeave(m_internals.mouseX, m_internals.mouseY);
 				
-				widget->onMouseEnter(m_mouseX, m_mouseY);
+				widget->onMouseEnter(m_internals.mouseX, m_internals.mouseY);
 				
 				break;
 			}
 		}
 		
 		// If not hovering over anything, leave old hover widget (if any.)
-		if (!hovering && this->m_hover)
+		if (!hovering && this->m_internals.hover)
 		{
-			m_hover->onMouseLeave(m_mouseX, m_mouseY);
-			m_hover = NULL;
+			m_internals.hover->onMouseLeave(m_internals.mouseX, m_internals.mouseY);
+			m_internals.hover = NULL;
 		}
 		
 		// Update all children.
-		for (size_t i = 0, sz = m_widgets.size(); i < sz; ++i)
-			m_widgets[i]->onUpdate(dt);
+		for (size_t i = 0, sz = m_internals.widgets.size(); i < sz; ++i)
+			m_internals.widgets[i]->onUpdate(dt);
 	}
 	
 	// When the widget is supposed to be rendered.
 	// NOTE: Inherited classes should invoke this method for the super-class.
 	virtual void onDraw(double scrx, double scry, void* udata = NULL)
 	{
-		if (m_hidden)
+		if (m_internals.hidden)
 			return;
 		
 		Widget* widget;
 		
 		// Draw all children.
-		for (size_t i = 0, sz = m_widgets.size(); i < sz; ++i)
+		for (size_t i = 0, sz = m_internals.widgets.size(); i < sz; ++i)
 		{
-			widget = m_widgets[i];
+			widget = m_internals.widgets[i];
 			
-			if (!widget->m_hidden)
+			if (!widget->m_internals.hidden)
 				widget->onDraw(widget->x + scrx, widget->y + scry, udata);
 		}
 	}
 	
 	// When a mouse button is down.
 	// NOTE: Inherited classes should invoke this method for the super-class.
-	virtual void onMouseDown(int x, int y, unsigned int b)
+	virtual void onMouseDown(double x, double y, unsigned int b)
 	{
-		if (m_hidden)
+		if (m_internals.hidden)
 			return;
 		
 		Widget* widget;
 		
-		m_testInsideChild = false;
+		m_internals.mouseInsideChild = false;
 		
 		// Send mouse-down signal to all children.
-		for (size_t i = m_widgets.size(); i--;)
+		for (size_t i = m_internals.widgets.size(); i--;)
 		{
-			widget = m_widgets[i];
-			widget->onMouseDown(static_cast<int>(x - widget->x), static_cast<int>(y - widget->y), b);
+			widget = m_internals.widgets[i];
+			widget->onMouseDown(x - widget->x, y - widget->y, b);
 		}
 		
-		// Check for any mouse-downs inside of an object.
-		// When found, push to the back, making it the focused widget.
-		for (size_t i = m_widgets.size(); i--;)
+		// If the mouse is inside this widget.
+		if (x >= 0. && x < this->width &&
+			y >= 0. && y < this->height )
 		{
-			widget = m_widgets[i];
 			
-			if (widget->m_hidden)
-				continue;
-			
-			if (static_cast<double>(x) >= widget->x && static_cast<double>(x) < widget->x + widget->width &&
-				static_cast<double>(y) >= widget->y && static_cast<double>(y) < widget->y + widget->height )
+			// Check for any mouse-downs inside of a child widget.
+			// When found, push to the back, making it the focused widget.
+			for (size_t i = m_internals.widgets.size(); i--;)
 			{
-				m_testInsideChild = true;
+				widget = m_internals.widgets[i];
 				
-				// Widget is being held down.
-				if (!widget->m_down)
+				if (widget->m_internals.hidden)
+					continue;
+				
+				if (x >= widget->x && x < widget->x + widget->width &&
+					y >= widget->y && y < widget->y + widget->height )
 				{
-					widget->m_down = true;
-					widget->m_downBtn = b;
+					m_internals.mouseInsideChild = true;
+					
+					// Widget is being held down.
+					if (!widget->m_internals.down)
+					{
+						widget->m_internals.down = true;
+						widget->m_internals.downBtn = b;
+					}
+					
+					// Make this widget the focused child.
+					this->setFocus(i);
+					
+					if (!widget->m_internals.mouseInsideChild)
+					{
+						// Mouse pressed.
+						widget->onPress(x - widget->x,  y - widget->y, b);
+					}
+					
+					break;
 				}
-				
-				// Make this widget the focused child.
-				this->setFocus(i);
-				
-				if (!widget->m_testInsideChild)
-				{
-					// Mouse pressed.
-					widget->onPress(static_cast<int>(x - widget->x),  static_cast<int>(y - widget->y), b);
-				}
-				
-				break;
 			}
+			
 		}
 	}
 	
 	// When a mouse button is up.
 	// NOTE: Inherited classes should invoke this method for the super-class.
-	virtual void onMouseUp(int x, int y, unsigned int b)
+	virtual void onMouseUp(double x, double y, unsigned int b)
 	{
-		if (m_hidden)
+		if (m_internals.hidden)
 			return;
 		
 		Widget* widget;
 		
-		m_testInsideChild = false;
+		m_internals.mouseInsideChild = false;
 		
 		// Send mouse-up signal to all children.
-		for (size_t i = 0, sz = m_widgets.size(); i < sz; ++i)
+		for (size_t i = m_internals.widgets.size(); i--;)
 		{
-			widget = m_widgets[i];
+			widget = m_internals.widgets[i];
+			widget->onMouseUp(x - widget->x, y - widget->y, b);
+		}
+		
+		bool mouseInsideThis = ( x >= 0. && x < this->width && y >= 0. && y < this->height );
+		
+		// Check for any mouse-ups inside of a child widget.
+		for (size_t i = m_internals.widgets.size(); i--;)
+		{
+			widget = m_internals.widgets[i];
 			
-			widget->onMouseUp(static_cast<int>(x - widget->x), static_cast<int>(y - widget->y), b);
-			
-			if (!m_testInsideChild)
+			if (!m_internals.mouseInsideChild)
 			{
-				m_testInsideChild = (
-					static_cast<double>(x) >= widget->x && static_cast<double>(x) < widget->x + widget->width &&
-					static_cast<double>(y) >= widget->y && static_cast<double>(y) < widget->y + widget->height );
+				m_internals.mouseInsideChild = (
+					x >= widget->x && x < widget->x + widget->width &&
+					y >= widget->y && y < widget->y + widget->height );
 			}
 			
-			if (widget->m_down && widget->m_downBtn == b)
+			if (widget->m_internals.down && widget->m_internals.downBtn == b)
 			{
 				// No longer held down.
-				widget->m_down = false;
+				widget->m_internals.down = false;
 				
-				if (widget->m_hidden)
+				if (widget->m_internals.hidden)
 					continue;
 				
 				// Mouse released this widget.
-				widget->onRelease(static_cast<int>(x - widget->x), static_cast<int>(y - widget->y), b);
-				
-				if (!widget->m_testInsideChild)
+				widget->onRelease(x - widget->x, y - widget->y, b);
+					
+				if (mouseInsideThis && !widget->m_internals.mouseInsideChild)
 				{
 					// Check if mouse was inside.
-					if (static_cast<double>(x) >= widget->x && static_cast<double>(x) < widget->x + widget->width &&
-						static_cast<double>(y) >= widget->y && static_cast<double>(y) < widget->y + widget->height )
+					if (x >= widget->x && x < widget->x + widget->width &&
+						y >= widget->y && y < widget->y + widget->height )
 					{
 						// Widget was clicked.
-						widget->onClick(static_cast<int>(x - widget->x), static_cast<int>(y - widget->y), b);
+						widget->onClick(x - widget->x, y - widget->y, b);
 					}
 				}
 			}
@@ -722,33 +753,33 @@ protected:
 	
 	// When the mouse wheel moves.
 	// NOTE: Inherited classes should invoke this method for the super-class.
-	virtual void onMouseWheel(int x, int y, int d)
+	virtual void onMouseWheel(double x, double y, int d)
 	{
 		Widget* widget;
 		
 		// Send mouse-wheel signal to all children.
-		for (size_t i = 0, sz = m_widgets.size(); i < sz; ++i)
+		for (size_t i = 0, sz = m_internals.widgets.size(); i < sz; ++i)
 		{
-			widget = m_widgets[i];
-			widget->onMouseWheel(static_cast<int>(x - widget->x), static_cast<int>(y - widget->y), d);
+			widget = m_internals.widgets[i];
+			widget->onMouseWheel(x - widget->x, y - widget->y, d);
 		}
 	}
 	
 	// When the mouse moves.
 	// NOTE: Inherited classes should invoke this method for the super-class.
-	virtual void onMouseMove(int x, int y, int dx, int dy)
+	virtual void onMouseMove(double x, double y, double dx, double dy)
 	{
 		Widget* widget;
 		
 		// Update mouse positions.
-		m_mouseX = x;
-		m_mouseY = y;
+		m_internals.mouseX = x;
+		m_internals.mouseY = y;
 		
 		// Send mouse-move signal to all children.
-		for (size_t i = 0, sz = m_widgets.size(); i < sz; ++i)
+		for (size_t i = 0, sz = m_internals.widgets.size(); i < sz; ++i)
 		{
-			widget = m_widgets[i];
-			widget->onMouseMove(static_cast<int>(x - widget->x), static_cast<int>(y - widget->y), dx, dy);
+			widget = m_internals.widgets[i];
+			widget->onMouseMove(x - widget->x, y - widget->y, dx, dy);
 		}
 	}
 	
@@ -757,8 +788,8 @@ protected:
 	virtual void onKeyDown(int key)
 	{
 		// Send key-down signal to all children.
-		for (size_t i = 0, sz = m_widgets.size(); i < sz; ++i)
-			m_widgets[i]->onKeyDown(key);
+		for (size_t i = 0, sz = m_internals.widgets.size(); i < sz; ++i)
+			m_internals.widgets[i]->onKeyDown(key);
 	}
 	
 	// When a keyboard key is up.
@@ -766,8 +797,8 @@ protected:
 	virtual void onKeyUp(int key)
 	{
 		// Send key-up signal to all children.
-		for (size_t i = 0, sz = m_widgets.size(); i < sz; ++i)
-			m_widgets[i]->onKeyUp(key);
+		for (size_t i = 0, sz = m_internals.widgets.size(); i < sz; ++i)
+			m_internals.widgets[i]->onKeyUp(key);
 	}
 	
 	// When a character is entered. (Useful for widgets like textboxes)
@@ -775,8 +806,8 @@ protected:
 	virtual void onKeyText(unsigned int ch)
 	{
 		// Send text signal to all children.
-		for (size_t i = 0, sz = m_widgets.size(); i < sz; ++i)
-			m_widgets[i]->onKeyText(ch);
+		for (size_t i = 0, sz = m_internals.widgets.size(); i < sz; ++i)
+			m_internals.widgets[i]->onKeyText(ch);
 	}
 	
 	
@@ -793,20 +824,20 @@ protected:
 	}
 	
 	// When the mouse presses inside this widget.
-	virtual void onPress(int x, int y, unsigned int b)
+	virtual void onPress(double x, double y, unsigned int b)
 	{
 		
 	}
 	
 	// When the mouse releases.
-	virtual void onRelease(int x, int y, unsigned int b)
+	virtual void onRelease(double x, double y, unsigned int b)
 	{
 		
 	}
 	
 	// When the mouse clicks this widget. (Useful for widgets like buttons)
 	// (When the mouse has pressed this widget and released with the mouse inside.)
-	virtual void onClick(int x, int y, unsigned int b)
+	virtual void onClick(double x, double y, unsigned int b)
 	{
 		
 	}
@@ -824,13 +855,13 @@ protected:
 	}
 	
 	// When the mouse entered inside the widget.
-	virtual void onMouseEnter(int x, int y)
+	virtual void onMouseEnter(double x, double y)
 	{
 		
 	}
 	
 	// When the mouse left outside the widget.
-	virtual void onMouseLeave(int x, int y)
+	virtual void onMouseLeave(double x, double y)
 	{
 		
 	}
