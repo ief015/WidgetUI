@@ -16,56 +16,56 @@ WidgetTemplate::~WidgetTemplate()
 
 void WidgetTemplate::onUpdate(double dt)
 {
-	Widget::onUpdate(dt);
+
 }
 
 
 void WidgetTemplate::onDraw(double scrx, double scry, void* udata)
 {
-	Widget::onDraw(scrx, scry, udata);
+
 }
 
 
 
 void WidgetTemplate::onMouseDown(double x, double y, unsigned int b)
 {
-	Widget::onMouseDown(x, y, b);
+
 }
 
 
 void WidgetTemplate::onMouseUp(double x, double y, unsigned int b)
 {
-	Widget::onMouseUp(x, y, b);
+
 }
 
 
 void WidgetTemplate::onMouseWheel(double x, double y, int d)
 {
-	Widget::onMouseWheel(x, y, d);
+
 }
 
 
 void WidgetTemplate::onMouseMove(double x, double y, double dx, double dy)
 {
-	Widget::onMouseMove(x, y, dx, dy);
+
 }
 
 
 void WidgetTemplate::onKeyDown(int key)
 {
-	Widget::onKeyDown(key);
+
 }
 
 
 void WidgetTemplate::onKeyUp(int key)
 {
-	Widget::onKeyUp(key);
+
 }
 
 
 void WidgetTemplate::onKeyText(unsigned int ch)
 {
-	Widget::onKeyText(ch);
+
 }
 
 
